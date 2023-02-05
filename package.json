@@ -44,7 +44,7 @@
     "build": "rollup -c",
     "watch": "npm run build -- --watch",
     "tscheck": "tsc --noEmit --skipLibCheck",
-    "release": "release --dry-run"
+    "changelog": "changelog"
   },
   "dependencies": {
     "param-case": "^3.0.4"

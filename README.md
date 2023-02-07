@@ -93,8 +93,8 @@ The name of the transpiler to use.
 - The plugin aims to emit the same code TypeScript's `tsc` would have given the passed tsconfig, no more, no less. Therefore, none of the supported transpilers specificities/unique features are exposed. In the simplest case, the transpiler is just a *"get rid of type annotations"* tool -- and a very fast one, for that matter.<br />
 To achieve its goal, the plugin does its best to call the selected transpiler's `transform` API with settings derived from the passed `tsconfig.json`. For example, TypeScript's `target` setting is mapped to the transpiler's corresponding setting.<br />
 There are a few cases where this mapping is not 100% accurate. To continue with the `target` example above, TypeScript defaults to `ES3` if the setting is not specified. This is fine with `swc` and `sucrase`, but not with `esbuild`, who supports ES5+ only. In such cases, a warning is emitted and the nearest setting is selected instead.
-- Because Rollup internally works with ESM source files, the transpiler's output is always set to `'esm'`. Still, CommonJS features like `require()`, `__filename` and `__dirname` are left untouched, so you will want to ensure that either `output.format` is set to `'cjs'` in `rollup.config.mjs`, or that appropriate shims are used.<br />
-Likewise, dynamics imports are always left untouched.
+- Because Rollup internally works with ESM source files, the transpiler's output is always set to `'esm'`. Still, CommonJS features like `require()`, `__filename` and `__dirname` are left untouched, so you will want to ensure that either `output.format` is set to `'cjs'` in `rollup.config.mjs`, or that appropriate shims are used.
+- Likewise, dynamics imports are always left untouched.
 - The plugin will only resolve modules with a `.json` extension when `resolveJsonModule` is true and the `module` and `moduleResolution` settings pair resolves to either `node`, `node16` or `nodeNext`.<br />
 Note, that you sill need `@rollup/plugin-json` to bundle json files!
 
@@ -109,7 +109,7 @@ To mitigate this, you should [set the `isolatedModules` option to true in tsconf
 
 You should also run `tsc --noEmit` sometime in your build steps to double check.
 
-### (other warning: TODO)
+### (other warnings: TODO)
 
 
 ## Considerations

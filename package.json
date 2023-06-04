@@ -54,7 +54,7 @@
     "esbuild": ">=0.17.5",
     "rollup": "^3.4.0",
     "sucrase": "^3.29.0",
-    "typescript": "^4.9.4"
+    "typescript": "4.x || 5.x"
   },
   "peerDependenciesMeta": {
     "@swc/core": {

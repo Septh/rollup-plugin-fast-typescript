@@ -1,6 +1,5 @@
-// @ts-check
-import externals from 'rollup-plugin-node-externals'
-import resolve from '@rollup/plugin-node-resolve'
+import nodeExternals from 'rollup-plugin-node-externals'
+import nodeResolve from '@rollup/plugin-node-resolve'
 import commonjs from '@rollup/plugin-commonjs'
 import json from '@rollup/plugin-json'
 import replace from '@rollup/plugin-replace'
@@ -90,11 +89,11 @@ export default defineConfig(args => {
         treeshake: isDist,
         strictDeprecations: true,
         plugins: [
-            externals({
+            nodeExternals({
                 // Nb: typescript is a peer, it won't be bundled no matter what devDeps says
                 devDeps: !isDist,
             }),
-            resolve({
+            nodeResolve({
                 extensions: [ '.ts' ]
             }),
             commonjs(),
@@ -113,10 +112,8 @@ export default defineConfig(args => {
             {
                 name: 'additional-watches',
                 buildStart() {
-                    if (this.meta.watchMode) {
-                        this.addWatchFile('./index.d.ts')
-                        // this.addWatchFile('./package.json')
-                    }
+                    this.addWatchFile('./index.d.ts')
+                    this.addWatchFile('./package.json')
                 }
             }
         ]

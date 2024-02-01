@@ -1,4 +1,4 @@
-import { paramCase as kebabCase } from 'param-case'
+import { kebabCase } from 'change-case'
 import {
     version,
     homepage

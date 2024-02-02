@@ -1,12 +1,10 @@
 {
   "extends": "../../tsconfig.json",
-  "include": [
-    "./source/**/*.ts"
-  ],
   "compilerOptions": {
-    "noEmit": true,
-    "checkJs": true,
+    "rootDir": "source",
+    "outDir": "build",
+    "isolatedModules": true,
     "resolveJsonModule": true,
-    "isolatedModules": true
+    "removeComments": false
   }
 }

@@ -1,8 +1,7 @@
 # rollup-plugin-fast-typescript
-A plugin that uses esbuild, swc or sucrase (you decide!) for blazing fast TypeScript transpilation, leaving the tree-shaking and bundling tasks to Rollup (see [why](#considerations)).
+A plugin that uses esbuild, swc or Sucrase (you decide!) for blazing fast TypeScript transpilation, leaving the tree-shaking and bundling tasks to Rollup.
 
->⚠ Important notice
->- This plugin requires rollup version 4.0.0 or higher.
+>- This plugin requires Rollup version 4.0.0 or higher.
 >- This package is ESM-only and can only be used from an ESM configuration file (`rollup.config.mjs` or `rollup.config.js` with `type="module"` in `package.json`. See [Rollup docs](https://rollupjs.org/guide/en/#configuration-files) for more detail).
 
 ## Features
@@ -22,20 +21,20 @@ You must also make sure that the transpiler you plan to use is installed - the p
 
 ```sh
 # for esbuild:
-npm install --save-dev rollup rollup-plugin-fast-typescript esbuild
+npm install --save-dev rollup-plugin-fast-typescript esbuild
 
 # for swc:
-npm install --save-dev rollup rollup-plugin-fast-typescript @swc/core
+npm install --save-dev rollup-plugin-fast-typescript @swc/core
 
-# for sucrase:
-npm install --save-dev rollup rollup-plugin-fast-typescript sucrase
+# for Sucrase:
+npm install --save-dev rollup-plugin-fast-typescript sucrase
 ```
 
 ## Usage
 The simpler, the better.
 
 ```js
-// rollup.config.mjs
+// rollup.config.js
 import fastTypescript from 'rollup-plugin-fast-typescript'
 
 export default {
@@ -75,15 +74,13 @@ Specifies how to resolve TypeScript options:
   - _Note: The file is assumed to live in the current working directory._
 - `false` or `''` (empty string) will use an empty tsconfig, causing the selected transpiler to use its own default settings.
 - a non-empty string is assumed to be the path to the tsconfig file to use (e.g., `'./tsconfig.prod.json'`), or the name of an installed npm package exposing a tsconfig file (e.g., `'@tsconfig/node16/tsconfig.json'`).
-- an object is assumed to be a [`TsConfigJson`](https://github.com/sindresorhus/type-fest/blob/main/source/tsconfig-json.d.ts) object.
+- an object is assumed to be a [`TsConfigJson`](https://github.com/sindresorhus/type-fest/blob/3ef12b0bdc7c29321daa304abf7a70ed49b9aa7d/source/tsconfig-json.d.ts#L248) object.
 - finally, if this parameter is a function, it must return any of the above, or a promise to a any of the above.
 
 ## Things you should know
-- The plugin aims to emit the same code TypeScript's `tsc` would have given the passed tsconfig, no more, no less. Therefore, none of the supported transpilers specificities/unique features are exposed. In the simplest case, the transpiler is just a *"get rid of type annotations"* tool -- and a very fast one, for that matter.<br />
-To achieve its goal, the plugin does its best to call the selected transpiler's `transform` API with settings derived from the passed `tsconfig.json`. For example, TypeScript's `target` setting is mapped to the transpiler's corresponding setting.<br />
-There are a few cases where this mapping is not 100% accurate. To continue with the `target` example, TypeScript defaults to `ES3` if the setting is not specified. This is fine with `swc` and `sucrase`, but not with `esbuild`, who supports ES5+ only. In such cases, a warning is emitted and the nearest setting is selected instead.
-- Because Rollup internally works with ESM source files, the transpiler's output is always set to `'esm'`. Still, CommonJS features like `require()`, `__filename` and `__dirname` are left untouched, so you will want to ensure that either `output.format` is set to `'cjs'` in `rollup.config.js`, or that appropriate shims are used.
-- Likewise, dynamics imports are always left untouched.
+- The plugin aims to emit the same code TypeScript's `tsc` would have given the passed tsconfig, no more, no less. Therefore, none of the supported transpilers specificities/unique features are exposed. In the simplest case, the transpiler is just a *"get rid of type annotations"* tool -- and a very fast one, for that matter.<br>
+To achieve its goal, the plugin does its best to call the selected transpiler's `transform` API with settings derived from the passed `tsconfig.json`. For example, TypeScript's `target` setting is mapped to the transpiler's corresponding setting.<br>
+- Because Rollup internally works with ESM source files, the transpiler's output is always set to `'esm'`.
 
 
 ## About warnings
@@ -97,16 +94,6 @@ To mitigate this, you should [set the `isolatedModules` option to true in tsconf
 You should also run `tsc --noEmit` sometime in your build steps to double check.
 
 ### (other warnings: TODO)
-
-
-## Considerations
-Why let Rollup do the tree-shaking and bundling?, you may ask.
-
-IMHO, Rollup is still the best at tree-shaking and bundling. It offers the more control on what can be done and, when configured properly, emits the best code possible with very little if no bloat.
-
-So the choice here is to trade some speed in the bundling phase in exchange for power and precision. I believe this is a reasonable choice.
-
-Also, if you want to have `esbuild` do the bundling... Why use Rollup in the first place?
 
 
 ## License

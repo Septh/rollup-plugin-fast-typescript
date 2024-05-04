@@ -12,13 +12,12 @@
     "sucrase"
   ],
   "license": "MIT",
-  "homepage": "https://github.com/Septh/rollup-plugins/tree/main/plugins/fast-typescript#readme",
+  "homepage": "https://github.com/Septh/rollup-plugin-fast-typescript#readme",
   "repository": {
     "type": "git",
-    "url": "https://github.com/Septh/rollup-plugins.git",
-    "directory": "plugins/fast-typescript"
+    "url": "https://github.com/Septh/rollup-plugin-fast-typescript.git"
   },
-  "bugs": "https://github.com/Septh/rollup-plugins/issues",
+  "bugs": "https://github.com/Septh/rollup-plugin-fast-typescript/issues",
   "files": [
     "build",
     "!*.d.ts",
@@ -59,10 +58,12 @@
     }
   },
   "devDependencies": {
-    "@septh/changelog": "^1.0.0",
     "@swc/core": "^1.4.17",
+    "@types/node": "^20.12.7",
     "esbuild": "^0.20.2",
     "sucrase": "^3.35.0",
+    "rollup": "^4.17.0",
+    "tslib": "^2.6.2",
     "typescript": "^5.4.5"
   }
 }

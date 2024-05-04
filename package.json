@@ -1,7 +1,7 @@
 {
   "name": "rollup-plugin-fast-typescript",
   "version": "2.0.0",
-  "description": "A plugin that uses esbuild, swc or sucrase (you decide!) for blazing fast TypeScript transpilation, leaving the tree-shaking and bundling tasks to Rollup.",
+  "description": "A plugin that uses esbuild, swc or sucrase (you decide!) for blazing fast TypeScript transpilation.",
   "author": "Stephan 'Septh' Schreiber <septh@sfr.fr>",
   "keywords": [
     "rollup",
@@ -38,6 +38,9 @@
     "watch": "npm run build -- --watch",
     "check": "tsc --noEmit --skipLibCheck",
     "changelog": "changelog"
+  },
+  "dependencies": {
+    "type-fest": "^0.13.1"
   },
   "peerDependencies": {
     "@swc/core": "^1.3.100",

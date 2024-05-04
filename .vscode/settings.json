@@ -1,0 +1,13 @@
+{
+  "vsicons.associations.files": [
+    {
+      "icon": "esbuild",
+      "extensions": [],
+      "filenamesGlob": ["esbuild.config"],
+      "extensionsGlob": ["js", "mjs", "cjs", "ts"],
+      "format": "svg",
+      "overrides": "esbuild"
+    }
+  ],
+  "typescript.tsdk": "node_modules\\typescript\\lib"
+}

@@ -1,8 +1,10 @@
 {
   "extends": "../../tsconfig.json",
   "compilerOptions": {
-    "rootDir": "source",
-    "outDir": "build",
+    "rootDir": "./source",
+    "outDir": "./build",
+    "moduleResolution": "bundler",
+    "module": "ESNext",
     "isolatedModules": true,
     "resolveJsonModule": true,
     "removeComments": false

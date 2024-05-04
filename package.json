@@ -32,12 +32,10 @@
   "exports": "./build/index.js",
   "types": "./build/index.d.ts",
   "scripts": {
-    "prebuild": "npm run clean",
-    "clean": "rimraf build",
-    "build": "tsc",
-    "watch": "npm run build -- --watch",
+    "build": "rimraf build && tsc",
+    "watch": "rimraf build && tsc --watch",
     "check": "tsc --noEmit --skipLibCheck",
-    "changelog": "changelog"
+    "prepublishOnly": "rimraf build && tsc --removeComments --declaration false && tsc --emitDeclarationOnly"
   },
   "dependencies": {
     "type-fest": "^0.13.1"

@@ -1,6 +1,6 @@
 {
   "name": "rollup-plugin-fast-typescript",
-  "version": "2.0.0",
+  "version": "2.1.0",
   "description": "A plugin that uses esbuild, swc or sucrase (you decide!) for blazing fast TypeScript transpilation.",
   "author": "Stephan 'Septh' Schreiber <septh@sfr.fr>",
   "keywords": [

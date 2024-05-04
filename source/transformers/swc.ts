@@ -2,15 +2,18 @@ import swc from '@swc/core'
 import ts from 'typescript'
 import { extname, type Transformer } from './_lib.js'
 
-let parserConfig: swc.TsParserConfig
-let transformConfig: swc.TransformConfig
-let reactConfig: swc.ReactConfig
-let swcOptions: swc.Options
 let preserveJsx: boolean
+let reactConfig: swc.ReactConfig
+let transformConfig: swc.TransformConfig
+let parserConfig: swc.TsParserConfig
+let swcOptions: swc.Options
 
 export default {
     applyCompilerOptions(context, compilerOptions) {
-        const { target = ts.ScriptTarget.ES3, jsx = ts.JsxEmit.None } = compilerOptions
+        const {
+            target = parseFloat(ts.version) >= 5.0 ? ts.ScriptTarget.ES5 : ts.ScriptTarget.ES3,
+            jsx = ts.JsxEmit.None
+        } = compilerOptions
 
         preserveJsx = jsx === ts.JsxEmit.None ||
                       jsx === ts.JsxEmit.Preserve ||
@@ -18,7 +21,7 @@ export default {
 
         // swcOptions.jsc.transform.react
         reactConfig = {
-            runtime: ts.JsxEmit.ReactJSX ? 'automatic' : 'classic',
+            runtime: jsx === ts.JsxEmit.React ? 'classic' : 'automatic',
             development: jsx === ts.JsxEmit.ReactJSXDev,
             pragma: compilerOptions.jsxFactory,
             pragmaFrag: compilerOptions.jsxFragmentFactory,
@@ -82,13 +85,19 @@ export default {
     },
 
     async transform(context, sourcecode, sourcefile) {
-        const isTsx = extname(sourcefile) === '.tsx'
-        parserConfig.tsx = isTsx
-        transformConfig.react = isTsx && !preserveJsx
-            ? reactConfig
-            : undefined
+        parserConfig.tsx = extname(sourcefile) === '.tsx'
+        if (parserConfig.tsx) {
+            transformConfig.react = reactConfig
 
-        return (swc.transform(sourcecode, swcOptions)
+            if (preserveJsx) {
+                context.error({
+                    message: "swc cannot preserve JSX syntax. Please set the 'jsx' setting in tsconfig.json to either 'react', 'react-jsx' or 'react-jsxdev'.",
+                    stack: undefined })
+            }
+        }
+        else transformConfig.react = undefined
+
+        return swc.transform(sourcecode, swcOptions)
             .catch(err => {
                 const message = (
                     err instanceof Error
@@ -100,6 +109,5 @@ export default {
                 context.error({ message, stack: undefined })
                 return null
             })
-        )
     }
 } satisfies Transformer

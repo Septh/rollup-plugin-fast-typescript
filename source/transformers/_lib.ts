@@ -1,9 +1,9 @@
-import type { PluginContext, TransformPluginContext, TransformResult } from 'rollup'
+import type { PluginContext, TransformPluginContext, TransformResult, MaybePromise } from 'rollup'
 import type { CompilerOptions } from 'typescript'
 
 export interface Transformer {
     applyCompilerOptions(context: PluginContext, compilerOptions: CompilerOptions): void
-    transform(context: TransformPluginContext, source: string, sourcefile: string): Promise<TransformResult>
+    transform(context: TransformPluginContext, source: string, sourcefile: string): MaybePromise<TransformResult>
 }
 
 const tsExtensions = new Set([ '.ts', '.tsx', '.mts', '.cts' ])

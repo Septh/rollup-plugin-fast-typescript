@@ -1,6 +1,6 @@
 import sucrase from 'sucrase'
 import ts from 'typescript'
-import { type Transformer } from './_lib.js'
+import type { Transformer } from './_lib.js'
 
 let transformOptions: sucrase.Options
 
@@ -12,6 +12,7 @@ export default {
             transforms: [ "typescript" ],
             disableESTransforms: true,
             preserveDynamicImport: true,
+            keepUnusedImports: compilerOptions.verbatimModuleSyntax,
             injectCreateRequireForImportRequire: false,
             enableLegacyTypeScriptModuleInterop: compilerOptions.esModuleInterop === false,
             enableLegacyBabel5ModuleInterop: false,
@@ -27,16 +28,16 @@ export default {
         }
     },
 
-    async transform(context, sourcecode, filePath) {
+    transform(context, sourcecode, filePath) {
         try {
-            const { code, sourceMap: map } = sucrase.transform(sourcecode, {
+            const { code, sourceMap } = sucrase.transform(sourcecode, {
                 ...transformOptions,
                 filePath,
                 sourceMapOptions: {
                     compiledFilename: filePath
                 }
             })
-            return { code, map }
+            return { code, map: sourceMap }
         }
         catch(err) {
             const message = (

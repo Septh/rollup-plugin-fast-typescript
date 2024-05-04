@@ -26,20 +26,28 @@ export default {
     applyCompilerOptions(context, compilerOptions) {
         let { target, jsx = ts.JsxEmit.None } = compilerOptions
 
-        // In esbuild, `target` defaults to 'esnext' if not given while it defaults to 'es3' in TypeScript.
+        // In esbuild, `target` defaults to 'ESNext' if not given while it defaults to 'ES3' in TypeScript < 5.0
+        // and to 'ES5' in later versions.
         // Therefore, to get TypeScript's behavior, we must set the option explicitly if not present.
-        let es3Warning = ''
+        const es3Warning: string[] = []
         if (target === undefined) {
-            target = ts.ScriptTarget.ES3
-            es3Warning = "'target' property is not set in tsconfig and so it defaults to ES3 in TypeScript. " +
-                         "However, "
+            if (parseFloat(ts.version) < 5.0) {
+                es3Warning.push(
+                    "When the 'target' property is not set in tsconfig.json, ",
+                    `it defaults to ES3 in TypeScript ${ts.version}. `,
+                    "However, "
+                )
+                target = ts.ScriptTarget.ES3
+            }
+            else target = ts.ScriptTarget.ES5
         }
         if (target === ts.ScriptTarget.ES3) {
-            context.warn(es3Warning + [
-                "ES3 target is not supported by esbuild, so ES5 will be used instead.",
-                "Please set 'target' option in tsconfig to at least ES5 to disable this warning or,",
+            es3Warning.push(
+                "ES3 target is not supported by esbuild, so ES5 will be used instead.\n",
+                "Please set the 'target' option in tsconfig.json to at least ES5 to disable this warning or, ",
                 "if you really need ES3 output, use either swc or sucrase rather than esbuild."
-            ].join(' '))
+            )
+            context.warn(es3Warning.join(''))
             target = ts.ScriptTarget.ES5
         }
 

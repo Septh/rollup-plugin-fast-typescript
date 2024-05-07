@@ -75,27 +75,21 @@ export default {
 
 ```js
 fastTypescript(
-  transpiler : 'esbuild' | 'swc' | 'sucrase',
+  transpiler: 'esbuild' | 'swc' | 'sucrase',
   tsconfig?: boolean | string | TsConfigJson | (() => MaybePromise<boolean | string | TsConfigJson>)
 )
 ```
 
 ```js
-esbuild(
-  tsconfig?: boolean | string | TsConfigJson | (() => MaybePromise<boolean | string | TsConfigJson>)
-)
+esbuild(tsconfig?: boolean | string | TsConfigJson | (() => MaybePromise<boolean | string | TsConfigJson>))
 ```
 
 ```js
-swc(
-  tsconfig?: boolean | string | TsConfigJson | (() => MaybePromise<boolean | string | TsConfigJson>)
-)
+swc(tsconfig?: boolean | string | TsConfigJson | (() => MaybePromise<boolean | string | TsConfigJson>))
 ```
 
 ```js
-sucrase(
-  tsconfig?: boolean | string | TsConfigJson | (() => MaybePromise<boolean | string | TsConfigJson>)
-)
+sucrase(tsconfig?: boolean | string | TsConfigJson | (() => MaybePromise<boolean | string | TsConfigJson>))
 ```
 
 ### Option: `transpiler`

@@ -18,6 +18,16 @@
     "url": "https://github.com/Septh/rollup-plugin-fast-typescript.git"
   },
   "bugs": "https://github.com/Septh/rollup-plugin-fast-typescript/issues",
+  "funding": [
+    {
+      "type": "patreon",
+      "url": "https://patreon.com/Septh"
+    },
+    {
+      "type": "paypal",
+      "url": "https://paypal.me/septh07"
+    }
+  ],
   "files": [
     "build",
     "!*.d.ts",

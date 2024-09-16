@@ -53,7 +53,6 @@ export function fastTypescript(
             // Resolve the tsconfig option.
             if (typeof tsConfig === 'function')
                 tsConfig = await tsConfig()
-
             if (tsConfig === true)
                 tsConfig = './tsconfig.json'
             else if (!tsConfig)
@@ -78,7 +77,6 @@ export function fastTypescript(
             let tsConfigBasePath: string,
                 tsConfigParsed: ts.ParsedCommandLine,
                 tsDiagnostics: ts.Diagnostic[] = []
-
             if (typeof tsConfig === 'string') {
                 tsConfig = path.resolve(tsConfig)
                 tsConfigBasePath = path.dirname(tsConfig)

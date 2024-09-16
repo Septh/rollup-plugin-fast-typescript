@@ -65,8 +65,8 @@ export default {
             jsxImportSource: compilerOptions.jsxImportSource,
             jsxSideEffects: true,
             minify: false,
-            treeShaking: false,
-            ignoreAnnotations: true,
+            treeShaking: true,
+            ignoreAnnotations: false,
             logLevel: 'silent',
 
             tsconfigRaw: {

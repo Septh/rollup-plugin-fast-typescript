@@ -5,21 +5,17 @@ import ts from 'typescript'
 import type { TsConfigJson } from 'type-fest'
 import { isTsSourceFile, isTsDeclarationFile, type Transformer } from './transformers/_lib.js'
 
-export { TsConfigJson }
+export type { TsConfigJson }
 
 type TransformerModule = {
     default: Transformer
 }
 
 // Get our own package.json
-const self = createRequire(import.meta.url)('../package.json') as {
-    name: string
-    version: string
-    homepage: string
-}
+const self = createRequire(import.meta.url)('#package.json') as typeof import('#package.json')
 
 /**
- * A plugin that uses esbuild, swc or sucrase for blazing fast TypeScript transforms.
+ * A plugin that uses `esbuild`, `swc` or `sucrase` for blazing fast TypeScript transforms.
  */
 export function fastTypescript(
     transpiler: 'esbuild' | 'swc' | 'sucrase',
@@ -47,7 +43,7 @@ export function fastTypescript(
             // Check the transpiler name.
             if (typeof transpiler !== 'string' || !transpiler)
                 this.error({ message: 'Missing or invalid transpiler name in plugin options.', stack: undefined })
-            else if (transpiler !== 'esbuild' && transpiler !== 'swc' && transpiler !== 'sucrase')
+            if (transpiler !== 'esbuild' && transpiler !== 'swc' && transpiler !== 'sucrase')
                 this.error({ message: `Unknown transpiler ${JSON.stringify(transpiler)}`, stack: undefined })
 
             // Resolve the tsconfig option.
@@ -179,17 +175,17 @@ export function fastTypescript(
     }
 }
 
-/** A plugin that uses esbuild for blazing fast TypeScript transforms. */
+/** A plugin that uses `esbuild` for blazing fast TypeScript transforms. */
 export function esbuild(tsConfig: boolean | string | TsConfigJson | (() => MaybePromise<boolean | string | TsConfigJson>) = true): Plugin {
     return fastTypescript('esbuild', tsConfig)
 }
 
-/** A plugin that uses swc for blazing fast TypeScript transforms. */
+/** A plugin that uses `swc` for blazing fast TypeScript transforms. */
 export function swc(tsConfig: boolean | string | TsConfigJson | (() => MaybePromise<boolean | string | TsConfigJson>) = true): Plugin {
     return fastTypescript('swc', tsConfig)
 }
 
-/** A plugin that uses sucrase for blazing fast TypeScript transforms. */
+/** A plugin that uses `sucrase` for blazing fast TypeScript transforms. */
 export function sucrase(tsConfig: boolean | string | TsConfigJson | (() => MaybePromise<boolean | string | TsConfigJson>) = true): Plugin {
     return fastTypescript('sucrase', tsConfig)
 }

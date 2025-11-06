@@ -11,6 +11,8 @@
   ],
   "typescript.tsdk": "node_modules\\typescript\\lib",
   "conventionalCommits.scopes": [
-    "esbuild"
+    "esbuild",
+    "swc",
+    "sucrase"
   ]
 }

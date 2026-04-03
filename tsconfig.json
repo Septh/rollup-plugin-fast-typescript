@@ -3,6 +3,7 @@
 
     // Libs
     "lib": [ "ESNext" ],
+    "types": [ "node" ],
     "skipLibCheck": true,
     "skipDefaultLibCheck": true,
 
@@ -11,7 +12,7 @@
     "resolveJsonModule": true,
 
     // Output
-    "outDir": "./build",
+    "outDir": "./dist",
     "target": "ESNext",
     "moduleResolution": "Node16",
     "module": "Node18",

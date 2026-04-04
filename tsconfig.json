@@ -9,13 +9,13 @@
 
     // Input
     "resolveJsonModule": true,
-    "checkJs": true,
+    "checkJs": false,
 
     // Output
     "target": "ESNext",
     "sourceMap": true,
     "declaration": true,
-    "declarationMap": true,
+    // "declarationMap": true,
     "noEmit": true,
 
     // Type checking

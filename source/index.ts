@@ -1,38 +1,29 @@
-import { createRequire } from 'node:module'
 import path from 'node:path'
-import type { Plugin, MaybePromise } from 'rollup'
 import ts from 'typescript'
+import type { MaybePromise, Plugin } from 'rollup'
 import type { TsConfigJson } from 'type-fest'
-import { isTsSourceFile, isTsDeclarationFile, type Transformer } from './transformers/_lib.js'
+import { isTsSourceFile, type Transformer, type TransformerModule } from './util.js'
+
+import self from '#package.json' with { type: 'json' }
 
 export type { TsConfigJson }
 
-type TransformerModule = {
-    default: Transformer
-}
-
-// Get our own package.json
-const self = createRequire(import.meta.url)('#package.json') as typeof import('#package.json')
-
 /**
- * A plugin that uses `esbuild`, `swc` or `sucrase` for blazing fast TypeScript transforms.
+ * A plugin that uses `esbuild`, `swc` or `sucrase` for blazing fast TypeScript builds.
  */
-export function fastTypescript(
-    transpiler: 'esbuild' | 'swc' | 'sucrase',
-    tsConfig: boolean | string | TsConfigJson | (() => MaybePromise<boolean | string | TsConfigJson>) = true
+export function fastTypeScript(
+    transpilerName: 'esbuild' | 'swc' | 'sucrase',
+    tsConfig?: boolean | string | TsConfigJson | (() => MaybePromise<boolean | string | TsConfigJson> | undefined)
 ): Plugin {
 
-    function tsDiagnosticAsText(diagnostic: ts.Diagnostic): string {
-        const { messageText } = diagnostic
-        return typeof messageText === 'string'
-            ? messageText
-            : ts.flattenDiagnosticMessageText(messageText, ts.sys.newLine)
-    }
+    // Our dynamically loaded transformer.
+    let transformer: Transformer | undefined = undefined
 
-    let tsCompilerOptions: ts.CompilerOptions
-    let tsModuleResolutionCache: ts.ModuleResolutionCache | undefined
-    let resolveIdCache: Map<string, string | null>
-    let transformer: Transformer
+    // TypeScript stuff.
+    const configFilesChain = new Set<string>()
+    let compilerOptions: ts.CompilerOptions | undefined
+    let compilerHost: ts.CompilerHost
+    let resolutionCache: ts.ModuleResolutionCache
 
     return {
         name: self.name.replace(/^rollup-plugin-/, ''),
@@ -40,154 +31,133 @@ export function fastTypescript(
 
         async buildStart() {
 
-            // Check the transpiler name.
-            if (typeof transpiler !== 'string' || !transpiler)
-                this.error({ message: 'Missing or invalid transpiler name in plugin options.', stack: undefined })
-            if (transpiler !== 'esbuild' && transpiler !== 'swc' && transpiler !== 'sucrase')
-                this.error({ message: `Unknown transpiler ${JSON.stringify(transpiler)}`, stack: undefined })
-
-            // Resolve the tsconfig option.
-            if (typeof tsConfig === 'function')
-                tsConfig = await tsConfig()
-            if (tsConfig === true)
-                tsConfig = './tsconfig.json'
-            else if (!tsConfig)
-                tsConfig = {}
-            else if (typeof tsConfig !== 'string' && typeof tsConfig !== 'object')
-                this.error({ message: `Invalid value '${JSON.stringify(tsConfig)}' for tsConfig parameter.`, stack: undefined })
-
-            // Use the TypeScript API to load and parse the full tsconfig.json chain,
-            // including extended configs, paths resolution, etc.
-            const configFileChain: string[] = []
-            const parseConfigHost: ts.ParseConfigHost = {
-                useCaseSensitiveFileNames: ts.sys.useCaseSensitiveFileNames,
-                fileExists: ts.sys.fileExists,
-                readDirectory: ts.sys.readDirectory,
-                readFile(file) {
-                    if (path.basename(file) !== 'package.json')
-                        configFileChain.push(path.normalize(file))
-                    return ts.sys.readFile(file)
+            // Lazy-load the transformer.
+            if (transformer === undefined) {
+                if (![ 'esbuild', 'swc', 'sucrase' ].includes(transpilerName))
+                    return this.error({ message: "Unknown or missing transpiler name, must be one of 'esbuild', 'swc' or 'sucrase'.", stack: undefined })
+                try {
+                    const module = await import(`./${transpilerName}.js`) as TransformerModule
+                    transformer = typeof module.default === 'function' ? await module.default() : module.default
                 }
-            }
-
-            let tsConfigBasePath: string,
-                tsConfigParsed: ts.ParsedCommandLine,
-                tsDiagnostics: ts.Diagnostic[] = []
-            if (typeof tsConfig === 'string') {
-                tsConfig = path.resolve(tsConfig)
-                tsConfigBasePath = path.dirname(tsConfig)
-
-                configFileChain.push(tsConfig)
-
-                const { config, error } = ts.readConfigFile(tsConfig, ts.sys.readFile)
-                if (error) {
-                    tsDiagnostics.push(error)
-                    tsConfigParsed = {
-                        options: {},
-                        fileNames: [],
-                        errors: [ error ]
-                    }
-                }
-                else tsConfigParsed = ts.parseJsonConfigFileContent(config, parseConfigHost, tsConfigBasePath, undefined, path.basename(tsConfig))
-            }
-            else {
-                tsConfigBasePath = process.cwd()
-                tsConfigParsed = ts.parseJsonConfigFileContent(tsConfig, parseConfigHost, tsConfigBasePath, undefined, '<configObject>')
-            }
-
-            tsDiagnostics.push(...ts.getConfigFileParsingDiagnostics(tsConfigParsed))
-            if (tsDiagnostics.length) {
-                const error = tsDiagnostics.find(diag => diag.category === ts.DiagnosticCategory.Error)
-                if (error)
-                    this.error({ message: tsDiagnosticAsText(error), stack: undefined })
-                else {
-                    tsDiagnostics.forEach(diag => {
-                        if (diag.category === ts.DiagnosticCategory.Warning)
-                            this.warn(tsDiagnosticAsText(diag))
-                    })
-                }
-            }
-
-            // Add our own "diagnostics"
-            tsCompilerOptions = tsConfigParsed.options
-            if (!tsCompilerOptions.isolatedModules) {
-                tsCompilerOptions.isolatedModules = true
-                this.warn(`'compilerOptions.isolatedModules' should be set to true in tsconfig. See ${new URL('#isolatedmodules', self.homepage).href} for details.`)
-            }
-
-            // Lazy-load the transpiler then hand off the tsconfig.
-            transformer = await (import(`./transformers/${transpiler}.js`) as Promise<TransformerModule>)
-                .then(plugin => plugin.default)
-                .catch(({ code, message }: NodeJS.ErrnoException) => {
-                    this.error({
-                        message: code === 'ERR_MODULE_NOT_FOUND'
-                            ? `Transformer '${transpiler}' could not be loaded, reinstalling this plugin might fix the error.`
-                            : message,
+                catch (err) {
+                    return this.error({
+                        message: `Error while loading transformer '${transpilerName}', reinstalling this plugin might help.`,
+                        cause: err,
                         stack: undefined
                     })
-                })
-            transformer.applyCompilerOptions(this, tsCompilerOptions)
-
-            // Initialize both TypeScript's and our own resolution cache.
-            resolveIdCache = new Map()
-            tsModuleResolutionCache = ts.createModuleResolutionCache(tsConfigBasePath, _ => _, tsCompilerOptions)
-
-            // And finally, watch the whole config chain.
-            for (const file of configFileChain) {
-                this.addWatchFile(file)
+                }
             }
+
+            // Resolve the project's tsconfig then hand off the compilerOptions to the transformer.
+            if (compilerOptions === undefined) {
+
+                if (typeof tsConfig === 'function') {
+                    // Note: no try/catch here, this is user code and we want the user
+                    // to see the full error stack if the function throws.
+                    tsConfig = await tsConfig()
+                }
+
+                if (tsConfig === true || tsConfig === undefined) {
+                    tsConfig = ts.findConfigFile(process.cwd(), ts.sys.fileExists)
+                    if (!tsConfig)
+                        return this.error({ message: "Couldn't find tsconfig.json", stack: undefined })
+                }
+                else if (typeof tsConfig === 'string' && tsConfig.length > 0)
+                    tsConfig = path.resolve(tsConfig)
+                else if (!tsConfig)
+                    tsConfig = {}
+                else if (typeof tsConfig !== 'string' && typeof tsConfig !== 'object')
+                    return this.error({ message: `Invalid value ${JSON.stringify(tsConfig)} for tsConfig parameter.`, stack: undefined })
+
+                // Create a ParseConfigHost that stores the full tsconfig.json files chain.
+                configFilesChain.clear()
+                const parseConfigHost: ts.ParseConfigHost = {
+                    useCaseSensitiveFileNames: ts.sys.useCaseSensitiveFileNames,
+                    fileExists: ts.sys.fileExists.bind(ts.sys),
+                    readDirectory: ts.sys.readDirectory.bind(ts.sys),
+                    readFile: file => {
+                        if (path.basename(file) !== 'package.json')
+                            configFilesChain.add(path.normalize(file))
+                        return ts.sys.readFile(file)
+                    }
+                }
+
+                let configBasePath: string
+                if (typeof tsConfig === 'string') {
+                    configBasePath = path.dirname(tsConfig)
+                    const { config, error } = ts.readConfigFile(tsConfig, parseConfigHost.readFile)
+                    if (error)
+                        return this.error({ message: tsDiagnosticAsText(error), stack: undefined })
+                    tsConfig = config as TsConfigJson
+                }
+                else configBasePath = process.cwd()
+
+                const parsed = ts.parseJsonConfigFileContent(tsConfig, parseConfigHost, configBasePath)
+                const diags = ts.getConfigFileParsingDiagnostics(parsed)
+                if (diags.length > 0) {
+                    const error = diags.find(diag => diag.category === ts.DiagnosticCategory.Error)
+                    if (error)
+                        return this.error({ message: tsDiagnosticAsText(error), stack: undefined })
+                    diags.forEach(diag => this.warn({ message: tsDiagnosticAsText(diag) }))
+                }
+
+                compilerOptions = parsed.options
+                if (!compilerOptions.isolatedModules)
+                    this.warn(`'compilerOptions.isolatedModules' should be set to true in tsconfig. See ${new URL('#isolatedmodules', self.homepage).href} for details.`)
+
+                compilerHost = ts.createCompilerHost(compilerOptions)
+                resolutionCache = ts.createModuleResolutionCache(configBasePath, compilerHost.getCanonicalFileName, compilerOptions)
+
+                transformer.applyCompilerOptions.call(this, compilerOptions)
+            }
+
+            // Watch all files in the tsconfig.json files chain.
+            configFilesChain.forEach(file => this.addWatchFile(file))
         },
 
-        async resolveId(id, importer) {
-            if (
-                !importer                       // Let Rollup resolve the program's entry point
-                || !isTsSourceFile(importer)    // Consider only what's imported by TypeScript code
-                || id.startsWith('\0')          // Ignore other plugins stuff
-            ) {
-                return null
-            }
-
-            // Some plugins sometimes cause the resolver to be called multiple times for the same id,
-            // so we cache our results for faster response when this happens.
-            // (undefined = not seen before, null = not handled by us, string = resolved)
-            let resolved = resolveIdCache.get(id)
-            if (resolved !== undefined)
-                return resolved
-
-            // Use TypeScript API to resolve the import
-            const { resolvedModule } = ts.resolveModuleName(id, importer, tsCompilerOptions, ts.sys, tsModuleResolutionCache)
-            if (resolvedModule) {
-                const { resolvedFileName } = resolvedModule
-                resolved = isTsDeclarationFile(resolvedFileName)
-                    ? null
-                    : resolvedFileName
-            }
-
-            resolveIdCache.set(id, resolved!)
-            return resolved
+        watchChange(id) {
+            if (configFilesChain.has(id))
+                compilerOptions = undefined
         },
 
-        async transform(code, id) {
-            return isTsSourceFile(id)
-                ? transformer.transform(this, code, id)
-                : null
-        }
+        resolveId(id, importer, { isEntry }) {
+            if (!importer || isEntry || !isTsSourceFile(importer) || id.startsWith('\0') || path.isAbsolute(id))
+                return
+
+            const { resolvedModule } = ts.resolveModuleName(id, importer, compilerOptions!, ts.sys, resolutionCache)
+            if (resolvedModule?.isExternalLibraryImport)
+                return
+            return resolvedModule?.resolvedFileName
+        },
+
+        async transform(code, id, options) {
+            if (!isTsSourceFile(id))
+                return
+            return await transformer?.transform.call(this, code, id, options)
+        },
+    }
+
+    function tsDiagnosticAsText(diagnostic: ts.Diagnostic): string {
+        const { messageText } = diagnostic
+        return typeof messageText === 'string'
+            ? messageText
+            : ts.flattenDiagnosticMessageText(messageText, ts.sys.newLine)
     }
 }
 
 /** A plugin that uses `esbuild` for blazing fast TypeScript transforms. */
 export function esbuild(tsConfig: boolean | string | TsConfigJson | (() => MaybePromise<boolean | string | TsConfigJson>) = true): Plugin {
-    return fastTypescript('esbuild', tsConfig)
+    return fastTypeScript('esbuild', tsConfig)
 }
 
 /** A plugin that uses `swc` for blazing fast TypeScript transforms. */
 export function swc(tsConfig: boolean | string | TsConfigJson | (() => MaybePromise<boolean | string | TsConfigJson>) = true): Plugin {
-    return fastTypescript('swc', tsConfig)
+    return fastTypeScript('swc', tsConfig)
 }
 
 /** A plugin that uses `sucrase` for blazing fast TypeScript transforms. */
 export function sucrase(tsConfig: boolean | string | TsConfigJson | (() => MaybePromise<boolean | string | TsConfigJson>) = true): Plugin {
-    return fastTypescript('sucrase', tsConfig)
+    return fastTypeScript('sucrase', tsConfig)
 }
 
-export default fastTypescript
+export default fastTypeScript

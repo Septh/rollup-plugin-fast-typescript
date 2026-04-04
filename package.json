@@ -52,7 +52,7 @@
     "build": "npm run buildOnly",
     "buildOnly": "npm run build:js && npm run build:dts",
     "build:js": "tsc -p tsconfig.build.json --declaration false --declarationMap false --removeComments",
-    "build:dts": "tsc -p tsconfig.build.json --declaration --declarationMap --emitDeclarationOnly",
+    "build:dts": "tsc -p tsconfig.build.json --noCheck --declaration --emitDeclarationOnly",
     "pretest": "npm run build",
     "test": "npm run testOnly",
     "testOnly": "echo \"Error: no test yet\" && exit 1",

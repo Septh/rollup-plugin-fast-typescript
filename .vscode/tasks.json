@@ -20,7 +20,7 @@
         "isDefault": true
       },
       "type": "typescript",
-      "tsconfig": "tsconfig.json",
+      "tsconfig": "tsconfig.build.json",
       "option": "watch",
       "problemMatcher": [
         "$tsc-watch"
@@ -29,7 +29,7 @@
         "reveal": "silent",
       },
       "runOptions": {
-        "runOn": "folderOpen"
+        // "runOn": "folderOpen"
       },
       "dependsOn": [ "clean" ],
       "dependsOrder": "sequence"
